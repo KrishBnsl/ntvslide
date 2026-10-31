@@ -1,0 +1,4 @@
+<resources>
+    <string name="app_name">ntvslide</string>
+    <string name="service_description">Detects the volume keys so ntvslide can show per-app volume sliders next to the system volume panel. It does not read or store anything on screen.</string>
+</resources>

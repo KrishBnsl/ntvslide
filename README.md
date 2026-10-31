@@ -1,34 +1,69 @@
-# CSS Exercises
+# ntvslide
 
-These exercises consist of a series of CSS-related tasks intended to complement the HTML and CSS content on The Odin Project (TOP). They should only be completed when instructed during the course of the curriculum.
+App-specific volume sliders for Nothing phones, built into the look of the Nothing OS volume panel.
 
-When doing these exercises, please use all documentation and resources you need to accomplish them. You are _not_ intended to have any of this stuff memorized at this point. Check the docs, use Google, and do what you need to do (besides checking the solutions) to get them done.
+Nothing OS, like stock Android, only has system-wide volume streams (media, ring, alarm…). ntvslide adds a
+slider **per app**, shown beside the system panel when you press a volume key, drawn in the same
+black / off-white / red-dot, dot-matrix style.
 
-> [!IMPORTANT]
-> We encourage you to practice your git skills by committing your changes and pushing them to your own fork.  However, please **DO NOT** open a Pull Request to have your solutions merged into this repo or to show your solution.  If we were to merge your changes the exercises would no longer be available as intended for new learners, and opening a PR only causes additional work for us, as we have to close it without merging.
+```
+web/       Runnable HTML/CSS/JS preview of the panel (tested; plays real per-app audio so you can hear it)
+android/   The Android app (Kotlin) — accessibility overlay + Shizuku-backed per-app volume
+```
 
-## Contributing
+## Web preview
 
-If you have suggestions to improve an exercise, ideas for a new exercise, or notice an issue with an exercise, please feel free to open an issue after thoroughly reading our [contributing guide](https://github.com/TheOdinProject/.github/blob/main/CONTRIBUTING.md).
+No build step:
 
-## How To Use These Exercises
+```sh
+cd web && python3 -m http.server 8000   # then open http://localhost:8000
+```
 
-1. Fork and clone this repository. To learn how to fork a repository, see the GitHub documentation on how to [fork a repo](https://docs.github.com/en/get-started/quickstart/fork-a-repo).
-    - Copies of repositories on your machine are called clones. If you need help cloning to your local environment, you can learn how from the GitHub documentation on [cloning a repository](https://docs.github.com/en/github/creating-cloning-and-archiving-repositories/cloning-a-repository-from-github/cloning-a-repository).
-1. Go to an exercise directory and open the HTML file in a web browser. You can open the file directly or use something like VSCode's Live Server extension.
-1. For each exercise, read the README thoroughly before starting any work.
-    - Each README has a "Self Check" list. Use this to ensure you haven't missed any important details in your implementation.
-1. Make your edits in the `index.html` and/or the `style.css` files in order to make the output in your browser look like the Desired Outcome image(s).
-    - Depending on the instructions of the exercise, you may only need to make edits in one of these files.
-1. Once you successfully finish an exercise, check TOP's solution to compare it with yours.
-    - You should not be checking the solution for an exercise until you finish it!
-    - If your solution differs wildly from TOP's solution (and still passes the exercise's requirements), that's completely fine. Do feel free to ask about it in our Discord if there are parts you do not understand.
+Drag a slider, scroll over it, or focus it and use ↑/↓ (Shift = ×5, `M` = mute). Tap an app icon to mute it,
+press ▶ to start that app's test tone. Heard loudness = **master × app**, which is also what the Android
+service does. Levels persist in `localStorage`.
 
-> [!IMPORTANT]
-> Do not submit your solutions to this repo, as any PRs that do so will be closed without merging.
+## Android app
 
-## Some Hints
-- The official solutions put all changes at the _end_ of the CSS file, which may duplicate some selectors (e.g. there might be a `body {}` in the given CSS and another `body {}` in the solution). When you are working on an exercise, it is best practice to add your CSS to existing selectors instead of duplicating them at the end of the file. We're sacrificing this best practice in our official solutions to make it extra clear to you what things we changed to solve the exercise.
-- Unless listed in the self-check section, do not worry about getting the exact pixel value for things like margin, padding and font size. These exercises are intended to test your knowledge of CSS, not your ability to guess that a screenshot is using `font: sans-serif bold 16px` or that the margin is _exactly_ `42px`.
-- You may need to add some elements to your HTML to get things into the right spot. (For the first few exercises, we make it explicit when this needs to happen.)
-- You may need to add more selectors to your CSS file. The first few exercises have almost everything already done for you, but as you progress, you'll find that you need to add more and more selectors to get the correct result.
+### How it works
+
+| Piece | What it does | API used |
+| --- | --- | --- |
+| `VolumeKeyService` | Accessibility service. On a volume key press it shows the panel as an overlay just left of the system panel, auto-hides after 4 s. Never consumes the key, so system volume works as normal. | public (`AccessibilityService`, `TYPE_ACCESSIBILITY_OVERLAY`) |
+| `ui/` (`PanelView`, `DotSliderView`, …) | The Nothing-style UI: dot-matrix pill sliders, dot-matrix readout, monochrome app icons, red dot for mute, haptic ticks every 10 %, TalkBack actions. | public |
+| `AppVolumeStore` | Per-app level + mute, saved by package name. | public |
+| `backend/` | Finds apps with active players and scales them. | **hidden / privileged** |
+
+**The honest limitation:** Android has no public API to change another app's volume. `backend/` therefore runs a
+small helper process through [Shizuku](https://shizuku.rikka.app/) (shell privileges, no root) that calls the
+framework's player-proxy `setVolume`, the same mechanism the system uses to duck audio. Only apps you have
+adjusted are ever touched, and the service re-applies levels every 2 s so newly started players are caught.
+
+### Build & install
+
+Needs Android Studio (or JDK 17 + Android SDK 34):
+
+```sh
+cd android
+./gradlew assembleDebug
+adb install app/build/outputs/apk/debug/app-debug.apk
+```
+
+Then open ntvslide and:
+
+1. Install and start Shizuku (wireless debugging is enough on Android 11+), then tap **Grant Shizuku access**.
+2. Tap **Enable accessibility service** and turn on ntvslide.
+3. Play something, press a volume key: the app sliders appear beside the system panel.
+
+### Status
+
+> ⚠️ **The Android code has not been compiled or run.** It was written without an Android SDK available, so expect
+> to fix small compile errors on first build. The hidden-API calls in `PrivilegedVolumeService`
+> (`IAudioService.getActivePlaybackConfigurations`, `AudioPlaybackConfiguration.getPlayerProxy().setVolume`)
+> are based on AOSP 12–14 and have not been verified on a Nothing device; some apps (e.g. native/Oboe players that
+> ignore the proxy volume) may not respond. The overlay offset (`88dp`) is an estimate of the system panel's width.
+> The web preview is the tested reference for look and behaviour.
+
+## License
+
+MIT, see [LICENSE](LICENSE).
