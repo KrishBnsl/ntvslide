@@ -1,0 +1,39 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>ntvslide · per-app volume for Nothing OS</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <main class="stage">
+    <section class="phone" aria-label="Phone preview">
+      <div class="wallpaper" aria-hidden="true"></div>
+      <div class="statusbar" aria-hidden="true"><span id="clock">12:00</span><span class="dots"></span></div>
+
+      <!-- Nothing-style volume panel, with the ntvslide per-app section appended -->
+      <aside id="panel" class="panel" aria-label="Volume">
+        <div class="col-group" id="system"></div>
+        <div class="divider" id="divider" aria-hidden="true"></div>
+        <div class="col-group apps" id="apps" aria-label="App volumes"></div>
+        <button id="expand" class="expand" type="button" aria-expanded="true" aria-controls="apps" aria-label="Toggle app volumes">
+          <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M8 5l8 7-8 7" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+        </button>
+      </aside>
+    </section>
+
+    <section class="remote" aria-label="Preview controls">
+      <h1 class="brand" id="brand" aria-label="ntvslide"></h1>
+      <p class="tagline">App-specific volume sliders, built into the Nothing volume panel.</p>
+      <div class="keys">
+        <button id="vol-up" type="button">Volume +</button>
+        <button id="vol-down" type="button">Volume −</button>
+      </div>
+      <label class="pin"><input id="pin" type="checkbox" checked> Keep panel open</label>
+      <p class="hint">Drag a slider, use ↑ ↓ keys when focused, or scroll over it. Tap an icon to mute that app. Press ▶ to hear it.</p>
+    </section>
+  </main>
+  <script src="app.js"></script>
+</body>
+</html>
